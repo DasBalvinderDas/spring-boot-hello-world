@@ -1,26 +1,15 @@
-# Maven build container 
+#
+# Build stage
+#
+FROM maven:3.6.0-jdk-11-slim AS build
+COPY src /home/app/src
+COPY pom.xml /home/app
+RUN mvn -f /home/app/pom.xml clean package
 
-FROM maven:3.8.5-openjdk-11 AS maven_build
-
-COPY pom.xml /tmp/
-
-COPY src /tmp/src/
-
-WORKDIR /tmp/
-
-RUN mvn package
-
-#pull base image
-
-FROM openjdk
-
-
-#expose port 8080
+#
+# Package stage
+#
+FROM openjdk:11-jre-slim
+COPY --from=build /home/app/target/demo-0.0.1-SNAPSHOT.jar /usr/local/lib/demo.jar
 EXPOSE 8080
-
-#default command
-CMD java -jar /data/hello-world-0.1.0.jar
-
-#copy hello world to docker image from builder image
-
-COPY --from=maven_build /tmp/target/hello-world-0.1.0.jar /data/hello-world-0.1.0.jar
+ENTRYPOINT ["java","-jar","/usr/local/lib/demo.jar"]
